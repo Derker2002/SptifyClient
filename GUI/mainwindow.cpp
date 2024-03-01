@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "GUI/CoverViewer.h"
-
+#include <QUrlQuery>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -69,6 +69,14 @@ void MainWindow::changeWidth(int delta)
   setGeometry(x(),y(),width()+(ctrlMod ? delta/5:delta),height());
 }
 
+void MainWindow::addToStartup(bool add)
+{
+  QString appName=QCoreApplication::applicationName();
+  QString appPath=QCoreApplication::applicationFilePath();
+  QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+  add? settings.setValue(appName,appPath): settings.remove(appName);
+}
+
 //spotify responses
 void MainWindow::showAccInfo(QJsonDocument doc)
 {
@@ -95,7 +103,7 @@ void MainWindow::showSongInfo(QJsonDocument doc)
     int songLenth=song["duration_ms"].toInt();
     prevSongName=currSongName;
     prevAuthors=authors;
-    ui->SongProgress->setMaximum(songLenth);
+    ui->SongProgress->setMaximum(songLenth/1000);
     ui->songLength->setText(QTime::fromMSecsSinceStartOfDay(songLenth).toString("mm:ss"));
     ui->SongName->setText(currSongName);
     ui->Authors->setText(authors);
@@ -114,8 +122,18 @@ void MainWindow::showSongInfo(QJsonDocument doc)
   }
 
   int currProgress=base["progress_ms"].toInt();
-  ui->SongProgress->setValue(currProgress);
-  ui->currSongTime->setText(QTime::fromMSecsSinceStartOfDay(currProgress).toString("mm:ss"));
+
+  if(!ui->SongProgress->isBusy() && (!timeChanged || (timeChanged && abs(currProgress-ui->SongProgress->value()*1000)<2000)))
+  // {sliderUpdateSkips=0;}
+  // if(sliderUpdateSkips<3)
+  //   sliderUpdateSkips++;
+  // else
+  {
+    timeChanged=false;
+    ui->SongProgress->setValue(currProgress/1000);
+    ui->currSongTime->setText(QTime::fromMSecsSinceStartOfDay(currProgress).toString("mm:ss"));
+  }
+
 }
 
 void MainWindow::playPause()
@@ -125,18 +143,31 @@ void MainWindow::playPause()
                      QUrl("https://api.spotify.com/v1/me/player/play"),PUT,nullptr);
 }
 
+void MainWindow::setNewTime(int time)
+{
+  QUrl url("https://api.spotify.com/v1/me/player/seek");
+  QUrlQuery query;
+  query.addQueryItem("position_ms",QString::number(time*1000));
+  url.setQuery(query);
+  spotifyRequest(url,PUT,nullptr);
+  timeChanged=true;
+}
+
 void MainWindow::initTray()
 {
   trayIcon = new QSystemTrayIcon(QIcon(":/play.png"), this);
 
   QMenu *trayMenu = new QMenu(this);
-  QAction *restoreAction = new QAction("Restore", this);
-  QAction *quitAction = new QAction("Quit", this);
+  QAction *quitAction = new QAction("Выход", this);
+  QAction *runWithSystem=new QAction("Запуск с системой",this);
+  runWithSystem->setCheckable(true);
+  QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+  runWithSystem->setChecked(settings.contains(QCoreApplication::applicationName()));
 
-  connect(restoreAction, &QAction::triggered, this, &MainWindow::showNormal);
   connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+  connect(runWithSystem,&QAction::triggered,this,&MainWindow::addToStartup);
 
-  trayMenu->addAction(restoreAction);
+  trayMenu->addAction(runWithSystem);
   trayMenu->addAction(quitAction);
 
   trayIcon->setContextMenu(trayMenu);
@@ -180,10 +211,6 @@ void MainWindow::setupUiElems()
 
 }
 
-void MainWindow::updateSliderView(QColor /*color*/)
-{
-
-}
 
 void MainWindow::updateData()
 {
@@ -224,14 +251,21 @@ void MainWindow::initProperties()
 void MainWindow::initConnections()
 {
   connect(&updateTimer,&QTimer::timeout,this,&MainWindow::updateData);
+
+  connect(ui->SongProgress,&ProgressSlider::previewTime,[=](int value){ui->currSongTime->setText(QTime::fromMSecsSinceStartOfDay(value*1000).toString("mm:ss"));});
+  connect(ui->SongProgress,&ProgressSlider::newTime,this,&MainWindow::setNewTime);
+
   connect(ui->coverView,&CoverViewer::clicked,this,&MainWindow::startDrag);
   connect(ui->coverView,&CoverViewer::dragged,this,&MainWindow::drag);
   connect(ui->coverView,&CoverViewer::released,this,&MainWindow::stopDrag);
   connect(ui->coverView,&CoverViewer::wheelScroll,this,&MainWindow::changeWidth);
+
   connect(ui->openSpotifyButton,&QPushButton::clicked,[=](){system("start spotify");});
+
   connect(ui->forwButton,&QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
   connect(ui->backButton,&QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
   connect(ui->ppButton,&QPushButton::clicked,this,&MainWindow::playPause);
+
 }
 
 

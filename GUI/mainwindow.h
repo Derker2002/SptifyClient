@@ -38,18 +38,19 @@ private slots:
     void drag(QPoint pos);
     void stopDrag();
     void changeWidth(int delta);
+    void addToStartup(bool add);
 private:
     void showAccInfo(QJsonDocument doc);
     void showSongInfo(QJsonDocument doc);
 
     void playPause();
+    void setNewTime(int time);
 private:
     void initTray();
     void loadPosition();
     void savePosition();
 
     void setupUiElems();
-    void updateSliderView(QColor color);
 
     void updateData();
     void processSpotifyRequestClick();
@@ -84,6 +85,8 @@ private:
                            "*[spotifyButton]:pressed{background:transparent;}";
     bool is_playing=false;
     bool is_draggable=false;
+    int sliderUpdateSkips=0;
+    bool timeChanged=false;
     QPoint delta;
     QSystemTrayIcon *trayIcon;
 };

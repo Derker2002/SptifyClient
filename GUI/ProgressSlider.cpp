@@ -1,8 +1,10 @@
 #include "ProgressSlider.h"
-
+#include <QMouseEvent>
 ProgressSlider::ProgressSlider(QWidget *parent)
     : QSlider{parent}
 {
+  connect(this,&ProgressSlider::valueChanged,this,&ProgressSlider::previewTime);
+
   setColors();
 
 }
@@ -21,6 +23,10 @@ void ProgressSlider::updateSliderColors(QPixmap cover)
       b+=col.blue();
     }
   leftLine=QColor(r/count,g/count,b/count);
+  rightLine=leftLine;
+  rightLine.setAlphaF(0.35);
+  handleHover=leftLine;
+  handleBase=leftLine;
   setColors();
 }
 // QTC_TEMP
@@ -32,4 +38,18 @@ void ProgressSlider::setColors()
                     .arg(rightLine.name(QColor::HexArgb))
                     .arg(leftLine.name(QColor::HexArgb));
   setStyleSheet(str);
+}
+
+void ProgressSlider::mousePressEvent(QMouseEvent *event)
+{
+  if(event->button()==Qt::LeftButton)
+  {m_busy=true;}
+  QSlider::mousePressEvent(event);
+}
+
+void ProgressSlider::mouseReleaseEvent(QMouseEvent *event)
+{
+  if(event->button()==Qt::LeftButton)
+  {m_busy=false;emit newTime(value());}
+  QSlider::mouseReleaseEvent(event);
 }
