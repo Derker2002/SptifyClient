@@ -47,8 +47,12 @@ private:
     void playPause();
     void setNewTime(int time);
     void setNewVolume(int volume);
+
     void updateLoopMode(bool nextMode=true);
     void applyLoopModeGUI(QJsonDocument);
+
+    void updateShuffle(bool swch=true);
+    void applyShuffleGUI(QJsonDocument);
 private:
     void initTray();
     void loadSettings();
@@ -94,6 +98,7 @@ private:
     bool timeChanged=false;
     int currLoopMode=0; // 0-off,1- track,2- context
     QString LoopModes[3]{"off","track","context"};
+    bool shuffle=false;
 
     QPoint delta;
     QSystemTrayIcon *trayIcon;

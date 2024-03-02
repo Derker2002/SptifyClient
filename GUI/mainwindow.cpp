@@ -40,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
   loadSettings();
   setNewVolume(ui->volumeSlider->value());
   updateLoopMode(false);
+  updateShuffle(false);
     // setGeometry(QRect(100,100,800,300));
 }
 
@@ -185,6 +186,22 @@ void MainWindow::applyLoopModeGUI(QJsonDocument)
   ui->loopButton->setIcon(QPixmap(tr(":/arrow_%1.png").arg(QString::number(currLoopMode))));
 }
 
+void MainWindow::updateShuffle(bool swch)
+{
+  QUrl url("https://api.spotify.com/v1/me/player/shuffle");
+  if(swch)
+    shuffle=!shuffle;
+  QUrlQuery query;
+  query.addQueryItem("state",shuffle? "true":"false");
+  url.setQuery(query);
+  spotifyRequest(url,PUT,&MainWindow::applyShuffleGUI);
+}
+
+void MainWindow::applyShuffleGUI(QJsonDocument)
+{
+  ui->shuffleButton->setIcon(QPixmap(shuffle? ":/shuffleEn.png":":/shuffle.png"));
+}
+
 void MainWindow::initTray()
 {
   trayIcon = new QSystemTrayIcon(QIcon(":/play.png"), this);
@@ -217,6 +234,7 @@ void MainWindow::loadSettings()
   settings.beginGroup("CTRL_Settings");
   ui->volumeSlider->setValue(settings.value("volume").toInt());
   currLoopMode=settings.value("loopMode").toInt();
+  shuffle=settings.value("shuffle").toBool();
   settings.endGroup();
 }
 void MainWindow::saveSettings()
@@ -229,6 +247,7 @@ void MainWindow::saveSettings()
   settings.beginGroup("CTRL_Settings");
   settings.setValue("volume",ui->volumeSlider->value());
   settings.setValue("loopMode",currLoopMode);
+  settings.setValue("shuffle",shuffle);
   settings.endGroup();
 }
 
@@ -265,8 +284,8 @@ void MainWindow::setupUiElems()
   ui->forwButton->setProperty("ctrlButton",true);
   ui->loopButton->setIcon(QPixmap(":/arrow_0.png"));
   ui->loopButton->setProperty("ctrlButton",true);
-  ui->shuffleButton->setIcon(QPixmap(":/shuffle.png"));
   ui->shuffleButton->setProperty("ctrlButton",true);
+  ui->shuffleButton->setIcon(QPixmap(":/shuffle.png"));
   ui->openSpotifyButton->setIcon(QPixmap(":/spotify.png"));
   ui->openSpotifyButton->setProperty("spotifyButton",true);
 
@@ -325,10 +344,11 @@ void MainWindow::initConnections()
 
   connect(ui->openSpotifyButton,&QPushButton::clicked,[=](){system("start spotify");});
 
-  connect(ui->forwButton,&QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
-  connect(ui->backButton,&QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
-  connect(ui->ppButton,&QPushButton::clicked,this,&MainWindow::playPause);
-  connect(ui->loopButton,&QPushButton::clicked,[=](){updateLoopMode();});
+  connect(ui->forwButton,   &QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
+  connect(ui->backButton,   &QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
+  connect(ui->ppButton,     &QPushButton::clicked,this,&MainWindow::playPause);
+  connect(ui->loopButton,   &QPushButton::clicked,[=](){updateLoopMode();});
+  connect(ui->shuffleButton,&QPushButton::clicked,[=](){updateShuffle();});
 
 }
 

@@ -8,6 +8,7 @@
         <file>play.png</file>
         <file>rewind.png</file>
         <file>shuffle.png</file>
+        <file>shuffleEn.png</file>
         <file>spotify.png</file>
         <file>spotify_transparent.png</file>
     </qresource>
