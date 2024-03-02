@@ -43,13 +43,18 @@ private:
     void showAccInfo(QJsonDocument doc);
     void showSongInfo(QJsonDocument doc);
 
+
     void playPause();
     void setNewTime(int time);
+    void setNewVolume(int volume);
+    void updateLoopMode(bool nextMode=true);
+    void applyLoopModeGUI(QJsonDocument);
 private:
     void initTray();
-    void loadPosition();
-    void savePosition();
+    void loadSettings();
+    void saveSettings();
 
+    void updateMainColor(QPixmap cover);
     void setupUiElems();
 
     void updateData();
@@ -87,6 +92,9 @@ private:
     bool is_draggable=false;
     int sliderUpdateSkips=0;
     bool timeChanged=false;
+    int currLoopMode=0; // 0-off,1- track,2- context
+    QString LoopModes[3]{"off","track","context"};
+
     QPoint delta;
     QSystemTrayIcon *trayIcon;
 };

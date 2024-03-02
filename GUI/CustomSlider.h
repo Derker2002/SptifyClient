@@ -1,22 +1,23 @@
-#ifndef PROGRESSSLIDER_H
-#define PROGRESSSLIDER_H
+#ifndef CUSTOMSLIDER_H
+#define CUSTOMSLIDER_H
 
 #include <QWidget>
 #include <QSlider>
 #include <QPixmap>
 #include <QImage>
-class ProgressSlider : public QSlider
+class CustomSlider : public QSlider
 {
   Q_OBJECT
   public:
-  explicit ProgressSlider(QWidget *parent = nullptr);
+  explicit CustomSlider(QWidget *parent = nullptr);
 
-      bool isBusy(){return m_busy;};
+    bool isBusy(){return m_busy;};
+    void setUseWheel(bool use){disableWheel=!use;}
   public slots:
-    void updateSliderColors(QPixmap cover);
+    void updateSliderColors(QColor newColor);
   signals:
-    void previewTime(int timeStamp);
-    void newTime(int timeStamp);
+    void previewValue(int value);
+      void newValue(int value);
   private:
     void setColors();
   private:
@@ -31,9 +32,11 @@ class ProgressSlider : public QSlider
                           "*[songProgressSlider]::sub-page:horizontal{background:%4;}";
     QColor handleBase,handleHover,leftLine,rightLine=QColor(0,0,0,60);
     bool m_busy=false;
+    bool disableWheel=false;
   protected:
       void mousePressEvent(QMouseEvent *event);
       void mouseReleaseEvent(QMouseEvent *event);
+      void wheelEvent(QWheelEvent *event);
 };
 
-#endif // PROGRESSSLIDER_H
+#endif // CUSTOMSLIDER_H

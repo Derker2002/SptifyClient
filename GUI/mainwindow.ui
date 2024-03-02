@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>913</width>
-    <height>357</height>
+    <height>254</height>
    </rect>
   </property>
   <property name="mouseTracking">
@@ -204,13 +204,16 @@
       </item>
       <item>
        <layout class="QGridLayout" name="InfoGrid">
-        <item row="3" column="0" colspan="3" alignment="Qt::AlignTop">
-         <widget class="QLabel" name="Authors">
-          <property name="text">
-           <string>Artisths</string>
+        <item row="2" column="0" colspan="3">
+         <widget class="QLabel" name="SongName">
+          <property name="font">
+           <font>
+            <pointsize>14</pointsize>
+            <bold>true</bold>
+           </font>
           </property>
-          <property name="scaledContents">
-           <bool>false</bool>
+          <property name="text">
+           <string>Name</string>
           </property>
          </widget>
         </item>
@@ -227,7 +230,67 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="3">
+        <item row="3" column="0" colspan="3" alignment="Qt::AlignTop">
+         <widget class="QLabel" name="Authors">
+          <property name="text">
+           <string>Artisths</string>
+          </property>
+          <property name="scaledContents">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4" rowspan="2" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="songLength">
+          <property name="text">
+           <string>0:00</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" rowspan="2" colspan="3">
+         <widget class="CustomSlider" name="SongProgress">
+          <property name="font">
+           <font>
+            <kerning>true</kerning>
+           </font>
+          </property>
+          <property name="mouseTracking">
+           <bool>true</bool>
+          </property>
+          <property name="tracking">
+           <bool>true</bool>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="3" colspan="2" alignment="Qt::AlignRight">
+         <widget class="CustomSlider" name="volumeSlider">
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>50</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4">
          <widget class="QPushButton" name="openSpotifyButton">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -252,44 +315,6 @@
           </property>
           <property name="flat">
            <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1" rowspan="2" colspan="2">
-         <widget class="ProgressSlider" name="SongProgress">
-          <property name="font">
-           <font>
-            <kerning>true</kerning>
-           </font>
-          </property>
-          <property name="mouseTracking">
-           <bool>true</bool>
-          </property>
-          <property name="tracking">
-           <bool>true</bool>
-          </property>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3" rowspan="2">
-         <widget class="QLabel" name="songLength">
-          <property name="text">
-           <string>0:00</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0" colspan="4">
-         <widget class="QLabel" name="SongName">
-          <property name="font">
-           <font>
-            <pointsize>14</pointsize>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Name</string>
           </property>
          </widget>
         </item>
@@ -348,9 +373,9 @@
    <header>GUI/CoverViewer.h</header>
   </customwidget>
   <customwidget>
-   <class>ProgressSlider</class>
+   <class>CustomSlider</class>
    <extends>QSlider</extends>
-   <header>GUI/ProgressSlider.h</header>
+   <header>GUI/CustomSlider.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

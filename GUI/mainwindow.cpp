@@ -2,13 +2,14 @@
 #include "ui_mainwindow.h"
 #include "GUI/CoverViewer.h"
 #include <QUrlQuery>
+#include <QDir>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
   setMouseTracking(true);
-  ui->responses->setVisible(false);
+  ui->responses->appendPlainText(QDir::currentPath());
   setupUiElems();
   setStyleSheet(baseStyle+ctrlButtonsStyle);
   // updateSliderView(Qt::black);
@@ -31,16 +32,20 @@ MainWindow::MainWindow(QWidget *parent)
   initProperties();
   initConnections();
 
+
+
   updateTimer.setInterval(500);
 
   updateTimer.start();
-  loadPosition();
+  loadSettings();
+  setNewVolume(ui->volumeSlider->value());
+  updateLoopMode(false);
     // setGeometry(QRect(100,100,800,300));
 }
 
 MainWindow::~MainWindow()
 {
-  savePosition();
+  saveSettings();
   delete ui;
 }
 
@@ -74,7 +79,7 @@ void MainWindow::addToStartup(bool add)
   QString appName=QCoreApplication::applicationName();
   QString appPath=QCoreApplication::applicationFilePath();
   QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
-  add? settings.setValue(appName,appPath): settings.remove(appName);
+  add? settings.setValue(appName,"\""+appPath.replace("/","\\")+"\""): settings.remove(appName);
 }
 
 //spotify responses
@@ -117,7 +122,7 @@ void MainWindow::showSongInfo(QJsonDocument doc)
     connect(reply, &QNetworkReply::finished, [=]() {
       QPixmap pixmap;
       pixmap.loadFromData(reply->readAll());
-      ui->SongProgress->updateSliderColors(pixmap);
+      updateMainColor(pixmap);
       albumCover->setPixmap(pixmap);
       ui->coverView->fitInView(scene->itemsBoundingRect(),Qt::KeepAspectRatio);
       reply->deleteLater();
@@ -155,6 +160,30 @@ void MainWindow::setNewTime(int time)
   spotifyRequest(url,PUT,nullptr);
   timeChanged=true;
 }
+void MainWindow::setNewVolume(int volume)
+{
+  QUrl url("https://api.spotify.com/v1/me/player/volume");
+  QUrlQuery query;
+  query.addQueryItem("volume_percent",QString::number(volume));
+  url.setQuery(query);
+  spotifyRequest(url,PUT,nullptr);
+}
+
+void MainWindow::updateLoopMode(bool nextMode)
+{
+  QUrl url("https://api.spotify.com/v1/me/player/repeat");
+  QUrlQuery query;
+  if(nextMode)
+    if(++currLoopMode>2)currLoopMode=0;
+  query.addQueryItem("state",LoopModes[currLoopMode]);
+  url.setQuery(query);
+  spotifyRequest(url,PUT,&MainWindow::applyLoopModeGUI);
+}
+
+void MainWindow::applyLoopModeGUI(QJsonDocument)
+{
+  ui->loopButton->setIcon(QPixmap(tr(":/arrow_%1.png").arg(QString::number(currLoopMode))));
+}
 
 void MainWindow::initTray()
 {
@@ -178,26 +207,55 @@ void MainWindow::initTray()
   trayIcon->show();
 }
 
-void MainWindow::loadPosition()
+void MainWindow::loadSettings()
 {
-  QSettings settings("ui.ini",QSettings::IniFormat);
+  QSettings settings(QCoreApplication::applicationDirPath()+"\\ui.ini",QSettings::IniFormat);
   settings.beginGroup("UI_Settings");
   setGeometry((settings.value("pos").value<QRect>()));
+  ui->responses->setVisible(settings.value("debug").toBool());
+  settings.endGroup();
+  settings.beginGroup("CTRL_Settings");
+  ui->volumeSlider->setValue(settings.value("volume").toInt());
+  currLoopMode=settings.value("loopMode").toInt();
   settings.endGroup();
 }
-void MainWindow::savePosition()
+void MainWindow::saveSettings()
 {
 
-  QSettings settings("ui.ini",QSettings::IniFormat);
+  QSettings settings(QCoreApplication::applicationDirPath()+"\\ui.ini",QSettings::IniFormat);
   settings.beginGroup("UI_Settings");
   settings.setValue("pos",QVariant::fromValue(QRect(x(),y(),width(),height())));
   settings.endGroup();
+  settings.beginGroup("CTRL_Settings");
+  settings.setValue("volume",ui->volumeSlider->value());
+  settings.setValue("loopMode",currLoopMode);
+  settings.endGroup();
+}
+
+void MainWindow::updateMainColor(QPixmap cover)
+{
+  int r=0,g=0,b=0,count=0;
+  QImage img=cover.toImage();
+  QColor col;
+  count=img.width()*img.height();
+  for(int i=0;i<img.width();i++)
+    for(int j=0;j<img.height();j++)
+    {col=img.pixelColor(i,j);
+      r+=col.red();
+      g+=col.green();
+      b+=col.blue();
+    }
+  col=QColor(r/count,g/count,b/count);
+  ui->SongProgress->updateSliderColors(col);
+  ui->volumeSlider->updateSliderColors(col);
 }
 
 void MainWindow::setupUiElems()
 {
   ui->responses->setProperty("responseWindow",true);
   ui->SongProgress->setProperty("songProgressSlider",true);
+  ui->SongProgress->setUseWheel(false);
+  ui->volumeSlider->setProperty("songProgressSlider",true);
   ui->backButton->setIcon(QPixmap(":/rewind.png"));
   ui->backButton->setProperty("ctrlButton",true);
   ui->ppButton  ->setIcon(QPixmap(":/play.png"));
@@ -205,7 +263,7 @@ void MainWindow::setupUiElems()
   ui->ppButton  ->setProperty("playButton",true);
   ui->forwButton->setIcon(QPixmap(":/fast-forward.png"));
   ui->forwButton->setProperty("ctrlButton",true);
-  ui->loopButton->setIcon(QPixmap(":/arrow.png"));
+  ui->loopButton->setIcon(QPixmap(":/arrow_0.png"));
   ui->loopButton->setProperty("ctrlButton",true);
   ui->shuffleButton->setIcon(QPixmap(":/shuffle.png"));
   ui->shuffleButton->setProperty("ctrlButton",true);
@@ -237,6 +295,7 @@ void MainWindow::spotifyRequest(QUrl url,ReqType type, responsePtr func)
     }else
     {
       ui->responses->appendPlainText(reply->errorString());
+      spotify.forceUpdateToken();
     }
     reply->deleteLater(); 
   });
@@ -255,8 +314,9 @@ void MainWindow::initConnections()
 {
   connect(&updateTimer,&QTimer::timeout,this,&MainWindow::updateData);
 
-  connect(ui->SongProgress,&ProgressSlider::previewTime,[=](int value){ui->currSongTime->setText(QTime::fromMSecsSinceStartOfDay(value*1000).toString("mm:ss"));});
-  connect(ui->SongProgress,&ProgressSlider::newTime,this,&MainWindow::setNewTime);
+  connect(ui->SongProgress,&CustomSlider::previewValue,[=](int value){ui->currSongTime->setText(QTime::fromMSecsSinceStartOfDay(value*1000).toString("mm:ss"));});
+  connect(ui->SongProgress,&CustomSlider::newValue,this,&MainWindow::setNewTime);
+  connect(ui->volumeSlider,&CustomSlider::newValue,this,&MainWindow::setNewVolume);
 
   connect(ui->coverView,&CoverViewer::clicked,this,&MainWindow::startDrag);
   connect(ui->coverView,&CoverViewer::dragged,this,&MainWindow::drag);
@@ -268,6 +328,7 @@ void MainWindow::initConnections()
   connect(ui->forwButton,&QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
   connect(ui->backButton,&QPushButton::clicked,this,&MainWindow::processSpotifyRequestClick);
   connect(ui->ppButton,&QPushButton::clicked,this,&MainWindow::playPause);
+  connect(ui->loopButton,&QPushButton::clicked,[=](){updateLoopMode();});
 
 }
 

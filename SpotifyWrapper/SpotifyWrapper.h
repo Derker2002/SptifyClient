@@ -17,12 +17,11 @@ class SpotifyWrapper : public QObject
 
   void init();
   QNetworkReply* get (QUrl url);
-  QNetworkReply* get (QNetworkRequest url);
   QNetworkReply* post(QUrl url);
-  QNetworkReply* post(QNetworkRequest url);
   QNetworkReply* put (QUrl url);
-  QNetworkReply* put (QNetworkRequest url);
+  void forceUpdateToken();
   private:
+
   bool loadInfo();
   void setInfo();
   void procceedAuth();
@@ -35,6 +34,7 @@ class SpotifyWrapper : public QObject
         clientSecret,
         clientRefreshToken,
         clientToken;
+  uint tokenExpireTime;
   signals:
     void responseText(QString);
 };

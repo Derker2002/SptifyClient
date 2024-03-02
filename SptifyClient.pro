@@ -10,14 +10,14 @@ CONFIG += c++17
 
 SOURCES += \
     GUI/CoverViewer.cpp \
-    GUI/ProgressSlider.cpp \
+    GUI/CustomSlider.cpp \
     GUI/mainwindow.cpp \
     SpotifyWrapper/SpotifyWrapper.cpp \
     main.cpp
 
 HEADERS += \
     GUI/CoverViewer.h \
-    GUI/ProgressSlider.h \
+    GUI/CustomSlider.h \
     GUI/mainwindow.h \
     SpotifyWrapper/SpotifyWrapper.h
 

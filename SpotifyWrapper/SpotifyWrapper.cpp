@@ -25,23 +25,32 @@ void SpotifyWrapper::init()
 
 QNetworkReply* SpotifyWrapper::get(QUrl url)
 {
+  if(QTime().msecsSinceStartOfDay()>tokenExpireTime)refreshToken();
   return wrapper.get(url);
 }
 
+
 QNetworkReply* SpotifyWrapper::post(QUrl url)
 {
+  if(QTime().msecsSinceStartOfDay()>tokenExpireTime)refreshToken();
   return wrapper.post(url);
 }
 
+
 QNetworkReply *SpotifyWrapper::put(QUrl url)
 {
+  if(QTime().msecsSinceStartOfDay()>tokenExpireTime)refreshToken();
   return wrapper.put(url);
 }
 
+void SpotifyWrapper::forceUpdateToken()
+{
+  refreshToken();
+}
 
 bool SpotifyWrapper::loadInfo()
 {
-  QSettings info("clientInfo.ini",QSettings::Format::IniFormat);
+  QSettings info(QCoreApplication::applicationDirPath()+"\\clientInfo.ini",QSettings::Format::IniFormat);
   info.beginGroup("ClientInfo");
   clientID=info.value("clientID").toString();
   clientSecret=info.value("clientSecret").toString();
@@ -110,6 +119,7 @@ void SpotifyWrapper::refreshToken()
             QJsonDocument doc=QJsonDocument::fromJson(reply->readAll());
             QJsonObject obj=doc.object();
             clientToken=obj["access_token"].toString();
+            tokenExpireTime=QTime().msecsSinceStartOfDay()+obj["expires_in"].toInt();
             wrapper.setToken(clientToken);
             reply->deleteLater();
           });
