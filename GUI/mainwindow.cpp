@@ -85,6 +85,8 @@ void MainWindow::showAccInfo(QJsonDocument doc)
 void MainWindow::showSongInfo(QJsonDocument doc)
 {
   QJsonObject base=doc.object();
+  if(base["context"].isNull())
+    return;
   is_playing=base["is_playing"].toBool();
   QJsonObject song =base["item"].toObject();
   ui->ppButton->setIcon(QPixmap(is_playing? ":/pause.png":":/play.png"));
@@ -107,6 +109,7 @@ void MainWindow::showSongInfo(QJsonDocument doc)
     ui->songLength->setText(QTime::fromMSecsSinceStartOfDay(songLenth).toString("mm:ss"));
     ui->SongName->setText(currSongName);
     ui->Authors->setText(authors);
+
 
     QUrl url(song["album"].toObject()["images"].toArray()[1].toObject()["url"].toString());
     auto reply = mngr.get(QNetworkRequest(url));
