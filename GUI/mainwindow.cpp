@@ -199,7 +199,7 @@ void MainWindow::updateShuffle(bool swch)
 
 void MainWindow::applyShuffleGUI(QJsonDocument)
 {
-  ui->shuffleButton->setIcon(QPixmap(shuffle? ":/shuffleEn.png":":/shuffle.png"));
+  ui->shuffleButton->setIcon(QPixmap(shuffle? ":/shuffleEn.png":":/Pshuffle.png"));
 }
 
 void MainWindow::initTray()
